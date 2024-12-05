@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"sort"
 	"strings"
 	"syscall"
@@ -98,14 +99,32 @@ func runCLI(args []string) {
 	start := time.Now()
 	permutationCount := 0
 
-	//for perm := range generatePermutationsChannel(elements) {
-	for range generatePermutationsChannel(elements) {
-		//fmt.Println(strings.Join(perm, ", "))
+	// Track memory usage
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
+	minMem := memStats.Alloc
+	maxMem := memStats.Alloc
+
+	for perm := range generatePermutationsChannel(elements) {
+		fmt.Println(strings.Join(perm, ", "))
 		permutationCount++
-		//}
+	}
+
+	if permutationCount%1000 == 0 {
+		// Update memory stats
+		runtime.ReadMemStats(&memStats)
+		if memStats.Alloc < minMem {
+			minMem = memStats.Alloc
+		}
+		if memStats.Alloc > maxMem {
+			maxMem = memStats.Alloc
+		}
+
 	}
 
 	fmt.Printf("Generated %d permutations in %v\n", permutationCount, time.Since(start))
+	fmt.Printf("Memory usage: Min = %d KB, Max = %d KB\n", minMem/1024, maxMem/1024)
+
 }
 
 // HTTP Server entry point
