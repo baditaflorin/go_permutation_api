@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -17,6 +18,7 @@ import (
 // App constants
 const (
 	defaultPort = "8080"
+	maxElements = 12
 )
 
 func main() {
@@ -28,23 +30,56 @@ func main() {
 	}
 }
 
-// Functional implementation of permutations in Go
-func permutations(arr []string) [][]string {
-	if len(arr) == 0 {
-		return [][]string{}
+// Helper function to reverse a slice
+func reverse(arr []string, start int) {
+	end := len(arr) - 1
+	for start < end {
+		arr[start], arr[end] = arr[end], arr[start]
+		start++
+		end--
 	}
-	if len(arr) == 1 {
-		return [][]string{arr}
+}
+
+func generatePermutationsChannel(arr []string) <-chan []string {
+	// Use a buffered channel to minimize blocking
+	ch := make(chan []string, 10000)
+	go func() {
+		defer close(ch)
+		sort.Strings(arr) // Ensure starting with the smallest lexicographical permutation
+		perm := make([]string, len(arr))
+		copy(perm, arr)
+		ch <- perm
+
+		for {
+			if !nextPermutation(arr) {
+				break
+			}
+			// Reuse the same slice to reduce memory allocations
+			copy(perm, arr)
+			ch <- perm
+		}
+	}()
+	return ch
+}
+
+// Efficient in-place generation of the next lexicographical permutation
+func nextPermutation(arr []string) bool {
+	i := len(arr) - 2
+	for i >= 0 && arr[i] >= arr[i+1] {
+		i--
+	}
+	if i < 0 {
+		return false
 	}
 
-	result := [][]string{}
-	for i, val := range arr {
-		rest := append(append([]string{}, arr[:i]...), arr[i+1:]...)
-		for _, perm := range permutations(rest) {
-			result = append(result, append([]string{val}, perm...))
-		}
+	j := len(arr) - 1
+	for arr[j] <= arr[i] {
+		j--
 	}
-	return result
+
+	arr[i], arr[j] = arr[j], arr[i]
+	reverse(arr, i+1)
+	return true
 }
 
 // CLI entry point
@@ -55,11 +90,25 @@ func runCLI(args []string) {
 	}
 
 	elements := args
-	perms := permutations(elements)
-	printPermutations(perms)
+	if err := validateInput(elements); err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	start := time.Now()
+	permutationCount := 0
+
+	//for perm := range generatePermutationsChannel(elements) {
+	for range generatePermutationsChannel(elements) {
+		//fmt.Println(strings.Join(perm, ", "))
+		permutationCount++
+		//}
+	}
+
+	fmt.Printf("Generated %d permutations in %v\n", permutationCount, time.Since(start))
 }
 
-// HTTP Server Entry Point
+// HTTP Server entry point
 func startServer(port string) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/permutations", handlePermutations)
@@ -69,7 +118,6 @@ func startServer(port string) {
 		Handler: mux,
 	}
 
-	// Graceful shutdown
 	idleConnsClosed := make(chan struct{})
 	go func() {
 		sigint := make(chan os.Signal, 1)
@@ -137,8 +185,8 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func validateInput(elements []string) error {
-	if len(elements) > 10 {
-		return errors.New("Too many elements (max 10 allowed)")
+	if len(elements) > maxElements {
+		return fmt.Errorf("Too many elements (max %d allowed)", maxElements)
 	}
 	for _, elem := range elements {
 		if strings.TrimSpace(elem) == "" {
@@ -149,22 +197,25 @@ func validateInput(elements []string) error {
 }
 
 func writePermutations(w http.ResponseWriter, elements []string) {
-	perms := permutations(elements)
-	response, err := json.Marshal(perms)
-	if err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		return
-	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(response)
-}
 
-// Utility function for printing permutations to the console
-func printPermutations(perms [][]string) {
-	for i, perm := range perms {
-		fmt.Printf("%d: %s\n", i+1, strings.Join(perm, ", "))
+	enc := json.NewEncoder(w)
+	enc.SetEscapeHTML(false)
+
+	w.Write([]byte("["))
+	first := true
+	for perm := range generatePermutationsChannel(elements) {
+		if !first {
+			w.Write([]byte(","))
+		}
+		if err := enc.Encode(perm); err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			return
+		}
+		first = false
 	}
+	w.Write([]byte("]"))
 }
 
 // Get environment variable or fallback to default
