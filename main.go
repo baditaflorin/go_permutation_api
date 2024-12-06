@@ -78,7 +78,19 @@ func runCLI(args []string, quiet bool) {
 
 	minMem, maxMem := getInitialMemory()
 
-	for perm := range generatePermutationsChannel(args) {
+	// Prepare and sort the initial permutation
+	perm := make([]string, len(args))
+	copy(perm, args)
+	sort.Strings(perm)
+
+	// Output the first permutation
+	if !quiet {
+		fmt.Println(strings.Join(perm, ", "))
+	}
+	permutationCount++
+
+	// Generate subsequent permutations
+	for next := nextPermutation(perm); next; next = nextPermutation(perm) {
 		if !quiet {
 			fmt.Println(strings.Join(perm, ", "))
 		}
@@ -256,7 +268,7 @@ func validateInput(elements []string) error {
 	return nil
 }
 
-// writePermutations writes the permutations to the HTTP response
+// writePermutations writes the permutations to the HTTP response in streaming fashion
 func writePermutations(w http.ResponseWriter, elements []string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -265,42 +277,24 @@ func writePermutations(w http.ResponseWriter, elements []string) {
 	enc.SetEscapeHTML(false)
 
 	w.Write([]byte("["))
-	first := true
-	for perm := range generatePermutationsChannel(elements) {
-		if !first {
-			w.Write([]byte(","))
-		}
-		if err := enc.Encode(perm); err != nil {
+
+	// Sort first
+	sort.Strings(elements)
+	// Write the first permutation
+	if err := enc.Encode(elements); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+
+	for next := nextPermutation(elements); next; next = nextPermutation(elements) {
+		w.Write([]byte(","))
+		if err := enc.Encode(elements); err != nil {
 			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 			return
 		}
-		first = false
 	}
+
 	w.Write([]byte("]"))
-}
-
-// generatePermutationsChannel generates permutations and sends them through a channel
-func generatePermutationsChannel(arr []string) <-chan []string {
-	ch := make(chan []string, 10000)
-	go func() {
-		defer close(ch)
-		perm := make([]string, len(arr))
-		copy(perm, arr)
-		sort.Strings(perm)
-		ch <- copySlice(perm)
-
-		for next := nextPermutation(perm); next; next = nextPermutation(perm) {
-			ch <- copySlice(perm)
-		}
-	}()
-	return ch
-}
-
-// copySlice creates a copy of a slice of strings
-func copySlice(src []string) []string {
-	dst := make([]string, len(src))
-	copy(dst, src)
-	return dst
 }
 
 // nextPermutation generates the next lexicographical permutation in-place
