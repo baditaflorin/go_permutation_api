@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -18,119 +19,133 @@ import (
 
 // App constants
 const (
-	defaultPort = "8080"
-	maxElements = 12
+	defaultPort  = "8080"
+	maxElements  = 12
+	defaultQuiet = false
 )
 
+// Config holds the application configuration
+type Config struct {
+	Port  string
+	Quiet bool
+	Args  []string
+}
+
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "serve" {
-		port := getEnv("PORT", defaultPort)
-		startServer(port)
+	config := parseFlags(os.Args[1:])
+
+	if config.Port != "" {
+		startServer(config.Port)
 	} else {
-		runCLI(os.Args[1:])
+		runCLI(config.Args, config.Quiet)
 	}
 }
 
-// Helper function to reverse a slice
-func reverse(arr []string, start int) {
-	end := len(arr) - 1
-	for start < end {
-		arr[start], arr[end] = arr[end], arr[start]
-		start++
-		end--
+// parseFlags parses command-line flags and arguments
+func parseFlags(args []string) Config {
+	var cfg Config
+	flagSet := flag.NewFlagSet("permutation-generator", flag.ExitOnError)
+
+	quiet := flagSet.Bool("quiet", defaultQuiet, "Suppress permutation output")
+	serve := flagSet.Bool("serve", false, "Start HTTP server")
+	port := flagSet.String("port", defaultPort, "Port for the HTTP server")
+
+	flagSet.Parse(args)
+
+	if *serve {
+		cfg.Port = *port
+	} else {
+		cfg.Args = flagSet.Args()
+		cfg.Quiet = *quiet
 	}
+
+	return cfg
 }
 
-func generatePermutationsChannel(arr []string) <-chan []string {
-	// Use a buffered channel to minimize blocking
-	ch := make(chan []string, 10000)
-	go func() {
-		defer close(ch)
-		sort.Strings(arr) // Ensure starting with the smallest lexicographical permutation
-		perm := make([]string, len(arr))
-		copy(perm, arr)
-		ch <- perm
-
-		for {
-			if !nextPermutation(arr) {
-				break
-			}
-			// Reuse the same slice to reduce memory allocations
-			copy(perm, arr)
-			ch <- perm
-		}
-	}()
-	return ch
-}
-
-// Efficient in-place generation of the next lexicographical permutation
-func nextPermutation(arr []string) bool {
-	i := len(arr) - 2
-	for i >= 0 && arr[i] >= arr[i+1] {
-		i--
-	}
-	if i < 0 {
-		return false
-	}
-
-	j := len(arr) - 1
-	for arr[j] <= arr[i] {
-		j--
-	}
-
-	arr[i], arr[j] = arr[j], arr[i]
-	reverse(arr, i+1)
-	return true
-}
-
-// CLI entry point
-func runCLI(args []string) {
+// runCLI handles the CLI functionality
+func runCLI(args []string, quiet bool) {
 	if len(args) == 0 {
-		fmt.Println("Usage: go run main.go [serve [port]] <elements>")
+		printUsage()
 		os.Exit(1)
 	}
 
-	elements := args
-	if err := validateInput(elements); err != nil {
-		fmt.Printf("Error: %v\n", err)
-		os.Exit(1)
+	if err := validateInput(args); err != nil {
+		logErrorAndExit(err)
 	}
 
-	start := time.Now()
+	startTime := time.Now()
 	permutationCount := 0
 
-	// Track memory usage
-	var memStats runtime.MemStats
-	runtime.ReadMemStats(&memStats)
-	minMem := memStats.Alloc
-	maxMem := memStats.Alloc
+	minMem, maxMem := getInitialMemory()
 
-	for perm := range generatePermutationsChannel(elements) {
-		fmt.Println(strings.Join(perm, ", "))
+	for perm := range generatePermutationsChannel(args) {
+		if !quiet {
+			fmt.Println(strings.Join(perm, ", "))
+		}
 		permutationCount++
+
+		// Update memory stats every 1000 permutations
+		if permutationCount%1000 == 0 {
+			updateMemoryStats(&minMem, &maxMem)
+		}
 	}
 
-	if permutationCount%1000 == 0 {
-		// Update memory stats
-		runtime.ReadMemStats(&memStats)
-		if memStats.Alloc < minMem {
-			minMem = memStats.Alloc
-		}
-		if memStats.Alloc > maxMem {
-			maxMem = memStats.Alloc
-		}
+	duration := time.Since(startTime)
+	minMemory, maxMemory := getFinalMemoryStats(minMem, maxMem)
 
-	}
-
-	fmt.Printf("Generated %d permutations in %v\n", permutationCount, time.Since(start))
-	fmt.Printf("Memory usage: Min = %d KB, Max = %d KB\n", minMem/1024, maxMem/1024)
-
+	printCLIResults(permutationCount, duration, minMemory, maxMemory)
 }
 
-// HTTP Server entry point
+// printUsage displays the usage information
+func printUsage() {
+	fmt.Println("Usage:")
+	fmt.Println("  serve [--port PORT]          Start HTTP server")
+	fmt.Println("  [--quiet] <elements>         Generate permutations")
+	flag.PrintDefaults()
+}
+
+// logErrorAndExit logs the error message and exits the program
+func logErrorAndExit(err error) {
+	fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+	os.Exit(1)
+}
+
+// getInitialMemory retrieves the initial memory usage
+func getInitialMemory() (minMem, maxMem uint64) {
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
+	minMem = memStats.Alloc
+	maxMem = memStats.Alloc
+	return
+}
+
+// updateMemoryStats updates the minimum and maximum memory usage
+func updateMemoryStats(minMem, maxMem *uint64) {
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
+	if memStats.Alloc < *minMem {
+		*minMem = memStats.Alloc
+	}
+	if memStats.Alloc > *maxMem {
+		*maxMem = memStats.Alloc
+	}
+}
+
+// getFinalMemoryStats formats the memory statistics
+func getFinalMemoryStats(minMem, maxMem uint64) (uint64, uint64) {
+	return minMem / 1024, maxMem / 1024
+}
+
+// printCLIResults outputs the permutation generation results
+func printCLIResults(count int, duration time.Duration, minMem, maxMem uint64) {
+	fmt.Printf("Generated %d permutations in %v\n", count, duration)
+	fmt.Printf("Memory usage: Min = %d KB, Max = %d KB\n", minMem, maxMem)
+}
+
+// startServer initializes and starts the HTTP server
 func startServer(port string) {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/permutations", handlePermutations)
+	mux.HandleFunc("/", handlePermutations)
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -138,19 +153,7 @@ func startServer(port string) {
 	}
 
 	idleConnsClosed := make(chan struct{})
-	go func() {
-		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
-		<-sigint
-
-		log.Println("Shutting down server gracefully...")
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := server.Shutdown(ctx); err != nil {
-			log.Printf("HTTP server Shutdown: %v", err)
-		}
-		close(idleConnsClosed)
-	}()
+	go handleShutdown(server, idleConnsClosed)
 
 	log.Printf("Starting server on port %s...", port)
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
@@ -160,7 +163,23 @@ func startServer(port string) {
 	<-idleConnsClosed
 }
 
-// HTTP handler for permutations
+// handleShutdown gracefully shuts down the server on interrupt
+func handleShutdown(server *http.Server, done chan struct{}) {
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
+	<-sigint
+
+	log.Println("Shutting down server gracefully...")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("HTTP server Shutdown: %v", err)
+	}
+	close(done)
+}
+
+// handlePermutations routes the request based on HTTP method
 func handlePermutations(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -172,15 +191,10 @@ func handlePermutations(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// handleGet processes GET requests for permutations
 func handleGet(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query().Get("elements")
-	if query == "" {
-		http.Error(w, "Missing 'elements' parameter", http.StatusBadRequest)
-		return
-	}
-
-	elements := strings.Split(query, ",")
-	if err := validateInput(elements); err != nil {
+	elements, err := parseElementsFromQuery(r)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -188,9 +202,10 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 	writePermutations(w, elements)
 }
 
+// handlePost processes POST requests for permutations
 func handlePost(w http.ResponseWriter, r *http.Request) {
-	var elements []string
-	if err := json.NewDecoder(r.Body).Decode(&elements); err != nil {
+	elements, err := parseElementsFromBody(r)
+	if err != nil {
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
 		return
 	}
@@ -203,6 +218,32 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	writePermutations(w, elements)
 }
 
+// parseElementsFromQuery extracts elements from URL query parameters
+func parseElementsFromQuery(r *http.Request) ([]string, error) {
+	query := r.URL.Query().Get("elements")
+	if query == "" {
+		return nil, errors.New("Missing 'elements' parameter")
+	}
+	elements := strings.Split(query, ",")
+	if err := validateInput(elements); err != nil {
+		return nil, err
+	}
+	return elements, nil
+}
+
+// parseElementsFromBody extracts elements from JSON request body
+func parseElementsFromBody(r *http.Request) ([]string, error) {
+	var elements []string
+	if err := json.NewDecoder(r.Body).Decode(&elements); err != nil {
+		return nil, err
+	}
+	if err := validateInput(elements); err != nil {
+		return nil, err
+	}
+	return elements, nil
+}
+
+// validateInput checks if the input elements meet the constraints
 func validateInput(elements []string) error {
 	if len(elements) > maxElements {
 		return fmt.Errorf("Too many elements (max %d allowed)", maxElements)
@@ -215,6 +256,7 @@ func validateInput(elements []string) error {
 	return nil
 }
 
+// writePermutations writes the permutations to the HTTP response
 func writePermutations(w http.ResponseWriter, elements []string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -237,10 +279,56 @@ func writePermutations(w http.ResponseWriter, elements []string) {
 	w.Write([]byte("]"))
 }
 
-// Get environment variable or fallback to default
-func getEnv(key, fallback string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
+// generatePermutationsChannel generates permutations and sends them through a channel
+func generatePermutationsChannel(arr []string) <-chan []string {
+	ch := make(chan []string, 10000)
+	go func() {
+		defer close(ch)
+		perm := make([]string, len(arr))
+		copy(perm, arr)
+		sort.Strings(perm)
+		ch <- copySlice(perm)
+
+		for next := nextPermutation(perm); next; next = nextPermutation(perm) {
+			ch <- copySlice(perm)
+		}
+	}()
+	return ch
+}
+
+// copySlice creates a copy of a slice of strings
+func copySlice(src []string) []string {
+	dst := make([]string, len(src))
+	copy(dst, src)
+	return dst
+}
+
+// nextPermutation generates the next lexicographical permutation in-place
+func nextPermutation(arr []string) bool {
+	i := len(arr) - 2
+	for i >= 0 && arr[i] >= arr[i+1] {
+		i--
 	}
-	return fallback
+	if i < 0 {
+		return false
+	}
+
+	j := len(arr) - 1
+	for arr[j] <= arr[i] {
+		j--
+	}
+
+	arr[i], arr[j] = arr[j], arr[i]
+	reverse(arr, i+1)
+	return true
+}
+
+// reverse reverses a slice of strings in-place starting from the given index
+func reverse(arr []string, start int) {
+	end := len(arr) - 1
+	for start < end {
+		arr[start], arr[end] = arr[end], arr[start]
+		start++
+		end--
+	}
 }
