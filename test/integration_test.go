@@ -11,6 +11,7 @@ import (
 	"github.com/baditaflorin/go_permutation_api/internal/config"
 )
 
+
 func TestIntegrationAPIServer(t *testing.T) {
 	// Create test configuration
 	cfg := config.Default()
@@ -124,7 +125,7 @@ func TestIntegrationAPIServer(t *testing.T) {
 			}
 
 			w := httptest.NewRecorder()
-			server.httpServer.Handler.ServeHTTP(w, req)
+			server.Handler().ServeHTTP(w, req)
 
 			if w.Code != tt.expectedStatus {
 				t.Errorf("expected status %d, got %d", tt.expectedStatus, w.Code)

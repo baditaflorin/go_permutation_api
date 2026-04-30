@@ -1,5 +1,8 @@
 version: '3.8'
 
+# IMPORTANT: Copy .env.example to .env and set all required values before running.
+# Never commit .env to version control.
+
 services:
   # API Server
   api:
@@ -12,18 +15,23 @@ services:
     environment:
       - SERVER_PORT=8080
       - SERVER_HOST=0.0.0.0
-      - MAX_ELEMENTS=12
-      - ENABLE_CORS=true
+      - MAX_ELEMENTS=${MAX_ELEMENTS:-12}
+      - ENABLE_CORS=${ENABLE_CORS:-true}
+      - LOG_FORMAT=json
+      - LOG_LEVEL=${LOG_LEVEL:-info}
       - DB_DRIVER=${DB_DRIVER:-}
       - DB_HOST=${DB_HOST:-db}
       - DB_PORT=${DB_PORT:-5432}
-      - DB_USERNAME=${DB_USERNAME:-postgres}
-      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_USERNAME=${DB_USERNAME:?DB_USERNAME must be set in .env}
+      - DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set in .env}
       - DB_DATABASE=${DB_DATABASE:-permutation_db}
       - DB_TABLE=${DB_TABLE:-elements}
       - DB_COLUMN=${DB_COLUMN:-value}
+      - DB_SSL_MODE=${DB_SSL_MODE:-require}
+      - ENABLE_PROMETHEUS=${ENABLE_PROMETHEUS:-false}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - permutation-network
     restart: unless-stopped
@@ -41,12 +49,12 @@ services:
       - SERVER_PORT=8080
       - SERVER_HOST=0.0.0.0
       - GUI_PORT=3000
-      - MAX_ELEMENTS=12
-      - DB_DRIVER=${DB_DRIVER:-}
+      - MAX_ELEMENTS=${MAX_ELEMENTS:-12}
+      - LOG_FORMAT=json
       - DB_HOST=${DB_HOST:-db}
       - DB_PORT=${DB_PORT:-5432}
-      - DB_USERNAME=${DB_USERNAME:-postgres}
-      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_USERNAME=${DB_USERNAME:?DB_USERNAME must be set in .env}
+      - DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set in .env}
       - DB_DATABASE=${DB_DATABASE:-permutation_db}
     volumes:
       - ./configs:/root/configs
@@ -55,16 +63,16 @@ services:
     restart: unless-stopped
     command: ["--gui"]
 
-  # PostgreSQL Database (optional)
+  # PostgreSQL Database
   db:
     image: postgres:16-alpine
     container_name: permutation-db
     environment:
-      - POSTGRES_USER=${DB_USERNAME:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - POSTGRES_USER=${DB_USERNAME:?DB_USERNAME must be set in .env}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set in .env}
       - POSTGRES_DB=${DB_DATABASE:-permutation_db}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"  # bind to localhost only
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -72,7 +80,7 @@ services:
       - permutation-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5

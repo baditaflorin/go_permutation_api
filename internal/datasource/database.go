@@ -3,11 +3,21 @@ package datasource
 import (
 	"database/sql"
 	"fmt"
+	"regexp"
 
-	_ "github.com/lib/pq"           // PostgreSQL driver
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
+	_ "github.com/lib/pq"              // PostgreSQL driver
 	_ "github.com/mattn/go-sqlite3"    // SQLite driver
 )
+
+var safeIdentifier = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+
+func secureIdentifier(name string) (string, error) {
+	if !safeIdentifier.MatchString(name) {
+		return "", fmt.Errorf("identifier %q contains unsafe characters", name)
+	}
+	return fmt.Sprintf(`"%s"`, name), nil
+}
 
 // DatabaseConfig holds database connection configuration
 type DatabaseConfig struct {
@@ -65,7 +75,17 @@ func (s *DatabaseSource) Load() ([]string, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	query := fmt.Sprintf("SELECT %s FROM %s", s.config.Column, s.config.Table)
+	// Use security package to safely quote identifiers (ADR-0003: SQL injection prevention)
+	col, err := secureIdentifier(s.config.Column)
+	if err != nil {
+		return nil, fmt.Errorf("unsafe column name: %w", err)
+	}
+	tbl, err := secureIdentifier(s.config.Table)
+	if err != nil {
+		return nil, fmt.Errorf("unsafe table name: %w", err)
+	}
+
+	query := fmt.Sprintf("SELECT %s FROM %s", col, tbl)
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
