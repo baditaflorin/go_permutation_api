@@ -27,11 +27,20 @@ func NewServer(cfg *config.Config) *Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", handler.HandlePermutations)
 	mux.HandleFunc("/health", handler.HandleHealth)
+	mux.HandleFunc("/version", handler.HandleVersion)
+	if cfg.App.EnableMetrics {
+		mux.HandleFunc("/metrics", handler.HandleMetrics)
+	}
 
-	// Apply middleware
+	// Apply middleware (order matters: outermost first)
 	var finalHandler http.Handler = mux
+	finalHandler = recoveryMiddleware(finalHandler)
 	if cfg.App.EnableCORS {
 		finalHandler = corsMiddleware(finalHandler)
+	}
+	finalHandler = compressionMiddleware(finalHandler)
+	if cfg.App.EnableMetrics {
+		finalHandler = metricsMiddleware(finalHandler)
 	}
 	finalHandler = loggingMiddleware(finalHandler)
 

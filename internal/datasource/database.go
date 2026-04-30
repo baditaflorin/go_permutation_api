@@ -58,6 +58,9 @@ func (s *DatabaseSource) Load() ([]string, error) {
 	}
 	s.db = db
 
+	// Configure connection pooling
+	ConfigureConnectionPool(db)
+
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}

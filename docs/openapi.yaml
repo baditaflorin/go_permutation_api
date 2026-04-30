@@ -1,0 +1,246 @@
+openapi: 3.0.3
+info:
+  title: Permutation API
+  description: Generate all lexicographical permutations of given elements
+  version: 1.0.0
+  contact:
+    name: API Support
+    url: https://github.com/baditaflorin/go_permutation_api
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://api.example.com
+    description: Production server
+
+tags:
+  - name: Permutations
+    description: Generate permutations
+  - name: Monitoring
+    description: Health checks and metrics
+
+paths:
+  /:
+    get:
+      tags:
+        - Permutations
+      summary: Generate permutations (GET)
+      description: Generate all lexicographical permutations from comma-separated query parameter
+      parameters:
+        - name: elements
+          in: query
+          required: true
+          description: Comma-separated list of elements to permute
+          schema:
+            type: string
+            example: "a,b,c"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: string
+              example:
+                - ["a", "b", "c"]
+                - ["a", "c", "b"]
+                - ["b", "a", "c"]
+                - ["b", "c", "a"]
+                - ["c", "a", "b"]
+                - ["c", "b", "a"]
+        '400':
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "too many elements: maximum is 12, got 15"
+        '405':
+          description: Method not allowed
+
+    post:
+      tags:
+        - Permutations
+      summary: Generate permutations (POST)
+      description: Generate all lexicographical permutations from JSON array in request body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+            example: ["a", "b", "c"]
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: string
+              example:
+                - ["a", "b", "c"]
+                - ["a", "c", "b"]
+                - ["b", "a", "c"]
+                - ["b", "c", "a"]
+                - ["c", "a", "b"]
+                - ["c", "b", "a"]
+        '400':
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "too many elements: maximum is 12, got 15"
+
+  /health:
+    get:
+      tags:
+        - Monitoring
+      summary: Health check
+      description: Check if the service is running and healthy
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+
+  /version:
+    get:
+      tags:
+        - Monitoring
+      summary: Version information
+      description: Get version and build information
+      responses:
+        '200':
+          description: Version information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  git_commit:
+                    type: string
+                    example: "abc123def"
+                  build_time:
+                    type: string
+                    example: "2024-01-15T10:30:00Z"
+                  go_version:
+                    type: string
+                    example: "go1.23.3"
+                  os:
+                    type: string
+                    example: "linux"
+                  arch:
+                    type: string
+                    example: "amd64"
+
+  /metrics:
+    get:
+      tags:
+        - Monitoring
+      summary: Application metrics
+      description: Get application metrics and statistics
+      responses:
+        '200':
+          description: Metrics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_count:
+                    type: integer
+                    example: 1234
+                  error_count:
+                    type: integer
+                    example: 5
+                  total_permutations:
+                    type: integer
+                    example: 720000
+                  uptime:
+                    type: string
+                    example: "2h15m30s"
+                  memory_usage_bytes:
+                    type: integer
+                    example: 52428800
+                  goroutines:
+                    type: integer
+                    example: 10
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+
+    Permutations:
+      type: array
+      items:
+        type: array
+        items:
+          type: string
+      description: Array of permutations, where each permutation is an array of strings
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+
+    VersionInfo:
+      type: object
+      properties:
+        version:
+          type: string
+        git_commit:
+          type: string
+        build_time:
+          type: string
+        go_version:
+          type: string
+        os:
+          type: string
+        arch:
+          type: string
+
+    Metrics:
+      type: object
+      properties:
+        request_count:
+          type: integer
+        error_count:
+          type: integer
+        total_permutations:
+          type: integer
+        uptime:
+          type: string
+        memory_usage_bytes:
+          type: integer
+        goroutines:
+          type: integer
