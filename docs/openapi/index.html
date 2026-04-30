@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Docs · Go Permutation API</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --text: #c9d1d9;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: .8rem;
+    }
+    header h1 { font-size: 1.2rem; color: #fff; }
+    header h1 a { color: var(--accent); text-decoration: none; }
+    nav a {
+      color: var(--text);
+      text-decoration: none;
+      margin-left: 1.2rem;
+      font-size: .9rem;
+    }
+    nav a:hover { color: var(--accent); }
+    #swagger-ui { max-width: 1200px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+
+    /* Dark-mode overrides for Swagger UI */
+    #swagger-ui .swagger-ui {
+      filter: invert(88%) hue-rotate(180deg);
+    }
+    /* Re-invert images, SVGs, code blocks so they stay readable */
+    #swagger-ui .swagger-ui img,
+    #swagger-ui .swagger-ui svg,
+    #swagger-ui .swagger-ui [class$="-model"],
+    #swagger-ui .swagger-ui pre,
+    #swagger-ui .swagger-ui code {
+      filter: invert(100%) hue-rotate(180deg);
+    }
+
+    .note {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 1rem 1.4rem;
+      margin: 1.5rem auto;
+      max-width: 1200px;
+      font-size: .88rem;
+      color: #8b949e;
+    }
+    .note a { color: var(--accent); }
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 1.5rem;
+      font-size: .82rem;
+      color: #8b949e;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1><a href="../">Go Permutation API</a> / API Docs</h1>
+  <nav>
+    <a href="../">Home</a>
+    <a href="../examples/">Examples</a>
+    <a href="https://github.com/baditaflorin/go_permutation_api" target="_blank">GitHub ↗</a>
+  </nav>
+</header>
+
+<div class="note">
+  This is the interactive OpenAPI 3.0 specification for the Go Permutation API.
+  To try the <strong>"Try it out"</strong> button, run a local server first:
+  <code>docker run -p 8080:8080 -e SERVER_HOST=0.0.0.0 ghcr.io/baditaflorin/go_permutation_api --serve</code>
+  then set the server URL to <a href="#">http://localhost:8080</a>.
+</div>
+
+<div id="swagger-ui"></div>
+
+<footer>
+  <a href="../">Home</a> · <a href="../examples/">Examples</a> ·
+  <a href="https://github.com/baditaflorin/go_permutation_api" target="_blank">GitHub</a>
+</footer>
+
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+<script>
+  window.onload = () => {
+    SwaggerUIBundle({
+      url: "../openapi.yaml",
+      dom_id: '#swagger-ui',
+      presets: [
+        SwaggerUIBundle.presets.apis,
+        SwaggerUIStandalonePreset
+      ],
+      layout: "StandaloneLayout",
+      deepLinking: true,
+      displayRequestDuration: true,
+      tryItOutEnabled: false,
+      defaultModelsExpandDepth: 2,
+      defaultModelExpandDepth: 2,
+    });
+  };
+</script>
+</body>
+</html>

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Go Permutation API</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent2: #3fb950;
+      --text: #c9d1d9;
+      --muted: #8b949e;
+      --danger: #f85149;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1.2rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    header h1 { font-size: 1.4rem; color: #fff; }
+    header h1 span { color: var(--accent); }
+    nav a {
+      color: var(--text);
+      text-decoration: none;
+      margin-left: 1.5rem;
+      font-size: 0.95rem;
+      transition: color .2s;
+    }
+    nav a:hover { color: var(--accent); }
+    .hero {
+      text-align: center;
+      padding: 4rem 2rem 2rem;
+    }
+    .hero h2 {
+      font-size: 2.4rem;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 620px;
+      margin: 0 auto 2rem;
+    }
+    .badge-row {
+      display: flex;
+      gap: .6rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 2.5rem;
+    }
+    .badge {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: .3rem .9rem;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+    .badge.green { border-color: var(--accent2); color: var(--accent2); }
+    .badge.blue  { border-color: var(--accent);  color: var(--accent); }
+    .cta-row {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+    }
+    .btn {
+      display: inline-block;
+      padding: .75rem 1.8rem;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      text-decoration: none;
+      font-weight: 600;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: var(--accent); color: #0d1117; }
+    .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+    .quick-start {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-width: 700px;
+      margin: 0 auto 4rem;
+      overflow: hidden;
+    }
+    .quick-start .tab-bar {
+      display: flex;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .quick-start .tab {
+      padding: .6rem 1.2rem;
+      font-size: .85rem;
+      cursor: pointer;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      user-select: none;
+    }
+    .quick-start .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .quick-start pre {
+      margin: 0;
+      padding: 1.2rem;
+      font-size: .85rem;
+      overflow-x: auto;
+      color: var(--text);
+    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.2rem;
+      max-width: 1100px;
+      margin: 0 auto 4rem;
+      padding: 0 2rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      text-decoration: none;
+      transition: border-color .2s, transform .15s;
+      display: block;
+      color: var(--text);
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card-icon { font-size: 2rem; margin-bottom: .7rem; }
+    .card h3 { font-size: 1.05rem; color: #fff; margin-bottom: .4rem; }
+    .card p { font-size: .9rem; color: var(--muted); }
+    section { padding: 0 2rem; }
+    section h2 {
+      text-align: center;
+      font-size: 1.7rem;
+      color: #fff;
+      margin-bottom: 2rem;
+    }
+    .endpoints {
+      max-width: 860px;
+      margin: 0 auto 4rem;
+    }
+    .ep {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+      margin-bottom: .8rem;
+    }
+    .method {
+      font-size: .75rem;
+      font-weight: 700;
+      padding: .25rem .6rem;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: .15rem;
+    }
+    .method.get  { background: #1a3a5c; color: #58a6ff; }
+    .method.post { background: #1a3a28; color: #3fb950; }
+    .ep-path { color: #fff; font-family: monospace; font-size: .95rem; }
+    .ep-desc { font-size: .85rem; color: var(--muted); margin-top: .2rem; }
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 1.8rem;
+      font-size: .85rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    .live-demo {
+      max-width: 860px;
+      margin: 0 auto 4rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+    .demo-row {
+      display: flex;
+      gap: .7rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .demo-row input {
+      flex: 1;
+      min-width: 180px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: .55rem .9rem;
+      font-size: .95rem;
+      outline: none;
+    }
+    .demo-row input:focus { border-color: var(--accent); }
+    .demo-row button {
+      background: var(--accent);
+      color: #0d1117;
+      border: none;
+      border-radius: var(--radius);
+      padding: .55rem 1.3rem;
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .demo-row button:hover { opacity: .85; }
+    #demo-output {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      min-height: 80px;
+      font-family: monospace;
+      font-size: .82rem;
+      color: var(--text);
+      overflow-y: auto;
+      max-height: 260px;
+      white-space: pre-wrap;
+    }
+    .demo-meta { font-size: .8rem; color: var(--muted); margin-top: .6rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Go <span>Permutation</span> API</h1>
+  <nav>
+    <a href="#demo">Live Demo</a>
+    <a href="examples/">Examples</a>
+    <a href="openapi/">API Docs</a>
+    <a href="adr/index.html">ADRs</a>
+    <a href="https://github.com/baditaflorin/go_permutation_api" target="_blank">GitHub ↗</a>
+  </nav>
+</header>
+
+<main>
+  <div class="hero">
+    <h2>Permutations as a Service</h2>
+    <p>High-performance, streaming permutation generation over HTTP and WebSocket — built with Go, zero runtime dependencies.</p>
+    <div class="badge-row">
+      <span class="badge green">Go 1.21+</span>
+      <span class="badge blue">REST API</span>
+      <span class="badge blue">WebSocket</span>
+      <span class="badge">Docker</span>
+      <span class="badge">OpenAPI 3.0</span>
+    </div>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="examples/">Try Live Examples</a>
+      <a class="btn btn-secondary" href="openapi/">View API Docs</a>
+    </div>
+
+    <!-- Quick-start tabs -->
+    <div class="quick-start" style="text-align:left">
+      <div class="tab-bar">
+        <div class="tab active" data-tab="curl">curl</div>
+        <div class="tab" data-tab="js">JavaScript</div>
+        <div class="tab" data-tab="python">Python</div>
+        <div class="tab" data-tab="docker">Docker</div>
+      </div>
+      <div class="tab-pane active" id="tab-curl">
+<pre># GET – comma-separated elements
+curl "http://localhost:8080/?elements=a,b,c"
+
+# POST – JSON array body
+curl -X POST http://localhost:8080/ \
+  -H "Content-Type: application/json" \
+  -d '["x","y","z"]'</pre>
+      </div>
+      <div class="tab-pane" id="tab-js">
+<pre>// GET permutations
+const res = await fetch('http://localhost:8080/?elements=a,b,c');
+const perms = await res.json();
+console.log(perms); // [["a","b","c"], ["a","c","b"], ...]
+
+// WebSocket streaming
+const ws = new WebSocket('ws://localhost:8080/ws');
+ws.onopen = () => ws.send(JSON.stringify({
+  action: 'start', elements: ['a','b','c','d']
+}));
+ws.onmessage = e => console.log(JSON.parse(e.data));</pre>
+      </div>
+      <div class="tab-pane" id="tab-python">
+<pre>import requests, json
+
+# GET
+r = requests.get('http://localhost:8080/', params={'elements': 'a,b,c'})
+perms = r.json()
+print(f"{len(perms)} permutations")
+
+# POST
+r = requests.post('http://localhost:8080/',
+                  json=['x', 'y', 'z'])
+print(r.json())</pre>
+      </div>
+      <div class="tab-pane" id="tab-docker">
+<pre># Run the API server
+docker run -p 8080:8080 \
+  -e SERVER_HOST=0.0.0.0 \
+  -e MAX_ELEMENTS=8 \
+  ghcr.io/baditaflorin/go_permutation_api --serve
+
+# Or with docker-compose
+cp .env.example .env   # edit DB credentials
+docker-compose up</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Mini Demo (requires a running server) -->
+  <section id="demo">
+    <h2>Live Demo</h2>
+    <div class="live-demo">
+      <p style="color:var(--muted);font-size:.88rem;margin-bottom:1rem">
+        Enter a comma-separated list of elements and click <strong>Run</strong> to call a live API instance.<br>
+        To try locally: <code style="background:var(--bg);padding:.1rem .4rem;border-radius:4px">docker run -p 8080:8080 -e SERVER_HOST=0.0.0.0 ghcr.io/baditaflorin/go_permutation_api --serve</code>
+      </p>
+      <div class="demo-row">
+        <input id="demo-host" value="http://localhost:8080" placeholder="API host" />
+        <input id="demo-elements" value="a,b,c" placeholder="elements (comma-separated)" />
+        <button onclick="runDemo()">Run</button>
+      </div>
+      <div id="demo-output">Results will appear here...</div>
+      <div class="demo-meta" id="demo-meta"></div>
+    </div>
+  </section>
+
+  <!-- Feature cards -->
+  <section>
+    <h2>Features</h2>
+  </section>
+  <div class="cards">
+    <a class="card" href="examples/">
+      <div class="card-icon">⚡</div>
+      <h3>Streaming</h3>
+      <p>NDJSON streaming and WebSocket real-time chunked delivery — handle millions of permutations without memory blow-up.</p>
+    </a>
+    <a class="card" href="openapi/">
+      <div class="card-icon">📖</div>
+      <h3>OpenAPI 3.0</h3>
+      <p>Full specification with interactive Swagger UI. Try every endpoint directly from the browser.</p>
+    </a>
+    <a class="card" href="adr/index.html">
+      <div class="card-icon">🏛️</div>
+      <h3>Architecture Decisions</h3>
+      <p>Six ADRs using the Six Thinking Hats methodology — security, performance, UX, and observability trade-offs documented.</p>
+    </a>
+    <a class="card" href="examples/#usecase-security">
+      <div class="card-icon">🔐</div>
+      <h3>Security</h3>
+      <p>Rate limiting, CORS, security headers, body-size limits, trusted-proxy enforcement, and SQL injection prevention.</p>
+    </a>
+    <a class="card" href="examples/#usecase-db">
+      <div class="card-icon">🗄️</div>
+      <h3>Database Input</h3>
+      <p>Pull elements from PostgreSQL, MySQL, or SQLite — or upload a CSV/TSV file directly through the GUI.</p>
+    </a>
+    <a class="card" href="examples/#usecase-ws">
+      <div class="card-icon">🔌</div>
+      <h3>WebSocket</h3>
+      <p>Bidirectional protocol with start/stop control, chunk streaming, progress events, and real-time cancellation.</p>
+    </a>
+  </div>
+
+  <!-- Endpoints reference -->
+  <section>
+    <h2>Endpoints</h2>
+    <div class="endpoints">
+      <div class="ep">
+        <span class="method get">GET</span>
+        <div>
+          <div class="ep-path">/?elements=a,b,c</div>
+          <div class="ep-desc">Returns all permutations as a JSON array. Streams NDJSON for large inputs.</div>
+        </div>
+      </div>
+      <div class="ep">
+        <span class="method post">POST</span>
+        <div>
+          <div class="ep-path">/</div>
+          <div class="ep-desc">Accepts a JSON array body; returns permutations. Supports CSV/TSV multipart upload.</div>
+        </div>
+      </div>
+      <div class="ep">
+        <span class="method get">GET</span>
+        <div>
+          <div class="ep-path">/health</div>
+          <div class="ep-desc">Liveness probe — returns <code>{"status":"healthy"}</code>.</div>
+        </div>
+      </div>
+      <div class="ep">
+        <span class="method get">GET</span>
+        <div>
+          <div class="ep-path">/version</div>
+          <div class="ep-desc">Returns build version, commit SHA, and Go runtime version.</div>
+        </div>
+      </div>
+      <div class="ep">
+        <span class="method get">GET</span>
+        <div>
+          <div class="ep-path">/metrics</div>
+          <div class="ep-desc">JSON or Prometheus text metrics (gated by <code>ENABLE_METRICS</code>).</div>
+        </div>
+      </div>
+      <div class="ep">
+        <span class="method get">GET</span>
+        <div>
+          <div class="ep-path">/ws</div>
+          <div class="ep-desc">WebSocket endpoint — stream permutations in configurable chunks with real-time cancellation.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Built with Go · <a href="https://github.com/baditaflorin/go_permutation_api" target="_blank">GitHub</a> ·
+  <a href="https://github.com/baditaflorin/go_permutation_api/blob/main/LICENSE" target="_blank">MIT License</a>
+</footer>
+
+<script>
+  // Tab switcher
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const id = tab.dataset.tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab-' + id).classList.add('active');
+    });
+  });
+
+  // Live demo
+  async function runDemo() {
+    const host = document.getElementById('demo-host').value.trim().replace(/\/$/, '');
+    const elements = document.getElementById('demo-elements').value.trim();
+    const out = document.getElementById('demo-output');
+    const meta = document.getElementById('demo-meta');
+    out.textContent = 'Fetching…';
+    meta.textContent = '';
+    const t0 = performance.now();
+    try {
+      const res = await fetch(`${host}/?elements=${encodeURIComponent(elements)}`);
+      const elapsed = (performance.now() - t0).toFixed(0);
+      if (!res.ok) {
+        const err = await res.text();
+        out.textContent = `Error ${res.status}:\n${err}`;
+        return;
+      }
+      const data = await res.json();
+      out.textContent = JSON.stringify(data, null, 2);
+      meta.textContent = `${data.length} permutations · ${elapsed} ms`;
+    } catch (e) {
+      out.textContent = `Network error: ${e.message}\n\nMake sure a local API server is running at the host above, or update the host field.`;
+    }
+  }
+
+  // Allow Enter key in elements input
+  document.getElementById('demo-elements').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runDemo();
+  });
+</script>
+</body>
+</html>
