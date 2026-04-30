@@ -1,0 +1,26 @@
+{
+  "server": {
+    "port": "8080",
+    "host": "localhost",
+    "gui_port": "3000",
+    "shutdown_timeout": 5
+  },
+  "database": {
+    "driver": "postgres",
+    "host": "localhost",
+    "port": "5432",
+    "username": "postgres",
+    "password": "postgres",
+    "database": "permutation_db",
+    "table": "elements",
+    "column": "value",
+    "ssl_mode": "disable"
+  },
+  "app": {
+    "max_elements": 12,
+    "quiet": false,
+    "memory_stats_freq": 1000,
+    "enable_cors": true,
+    "enable_metrics": false
+  }
+}

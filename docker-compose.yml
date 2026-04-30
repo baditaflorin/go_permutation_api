@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # API Server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: permutation-api
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - SERVER_HOST=0.0.0.0
+      - MAX_ELEMENTS=12
+      - ENABLE_CORS=true
+      - DB_DRIVER=${DB_DRIVER:-}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_DATABASE=${DB_DATABASE:-permutation_db}
+      - DB_TABLE=${DB_TABLE:-elements}
+      - DB_COLUMN=${DB_COLUMN:-value}
+    depends_on:
+      - db
+    networks:
+      - permutation-network
+    restart: unless-stopped
+    command: ["--serve"]
+
+  # GUI Server
+  gui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: permutation-gui
+    ports:
+      - "3000:3000"
+    environment:
+      - SERVER_PORT=8080
+      - SERVER_HOST=0.0.0.0
+      - GUI_PORT=3000
+      - MAX_ELEMENTS=12
+      - DB_DRIVER=${DB_DRIVER:-}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_DATABASE=${DB_DATABASE:-permutation_db}
+    volumes:
+      - ./configs:/root/configs
+    networks:
+      - permutation-network
+    restart: unless-stopped
+    command: ["--gui"]
+
+  # PostgreSQL Database (optional)
+  db:
+    image: postgres:16-alpine
+    container_name: permutation-db
+    environment:
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - POSTGRES_DB=${DB_DATABASE:-permutation_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - permutation-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  permutation-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
