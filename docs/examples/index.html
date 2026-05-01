@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Examples · Go Permutation API</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent2: #3fb950;
+      --text: #c9d1d9;
+      --muted: #8b949e;
+      --danger: #f85149;
+      --warn: #d29922;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: .8rem;
+    }
+    header h1 { font-size: 1.2rem; color: #fff; }
+    header h1 a { color: var(--accent); text-decoration: none; }
+    nav a {
+      color: var(--text);
+      text-decoration: none;
+      margin-left: 1.2rem;
+      font-size: .9rem;
+      transition: color .2s;
+    }
+    nav a:hover { color: var(--accent); }
+    .layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      min-height: calc(100vh - 60px);
+    }
+    .sidebar {
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      padding: 1.5rem 1rem;
+      position: sticky;
+      top: 0;
+      height: calc(100vh - 60px);
+      overflow-y: auto;
+    }
+    .sidebar h3 {
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: .8rem;
+    }
+    .sidebar a {
+      display: block;
+      color: var(--text);
+      text-decoration: none;
+      font-size: .88rem;
+      padding: .35rem .6rem;
+      border-radius: 5px;
+      margin-bottom: .15rem;
+      transition: background .15s, color .15s;
+    }
+    .sidebar a:hover, .sidebar a.active { background: rgba(88,166,255,.12); color: var(--accent); }
+    .main { padding: 2rem; max-width: 900px; }
+    h2 {
+      font-size: 1.5rem;
+      color: #fff;
+      margin-bottom: .4rem;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: .9rem;
+      margin-bottom: 1.5rem;
+    }
+    /* Config bar */
+    .config-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .8rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: .8rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .config-bar label { font-size: .85rem; color: var(--muted); }
+    .config-bar input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      padding: .35rem .7rem;
+      font-size: .9rem;
+      width: 220px;
+      outline: none;
+    }
+    .config-bar input:focus { border-color: var(--accent); }
+    /* Example cards */
+    .example {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+    .example-header {
+      padding: 1rem 1.4rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .example-header h3 { font-size: 1.05rem; color: #fff; }
+    .example-header .tags { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .tag {
+      font-size: .72rem;
+      padding: .15rem .55rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .tag.ws  { border-color: var(--warn);   color: var(--warn); }
+    .tag.get { border-color: var(--accent);  color: var(--accent); }
+    .tag.post{ border-color: var(--accent2); color: var(--accent2); }
+    .example-body { padding: 1.2rem 1.4rem; }
+    .example-body p { color: var(--muted); font-size: .9rem; margin-bottom: 1rem; }
+    .fields { display: flex; gap: .7rem; flex-wrap: wrap; margin-bottom: .9rem; }
+    .fields input, .fields select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      padding: .4rem .75rem;
+      font-size: .88rem;
+      outline: none;
+      flex: 1;
+      min-width: 140px;
+    }
+    .fields input:focus, .fields select:focus { border-color: var(--accent); }
+    .btn-row { display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: .9rem; }
+    .btn {
+      padding: .45rem 1.1rem;
+      border: none;
+      border-radius: var(--radius);
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-run  { background: var(--accent2); color: #0d1117; }
+    .btn-stop { background: var(--danger);  color: #fff; }
+    .btn-clear{ background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+    .output {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .9rem;
+      font-family: monospace;
+      font-size: .78rem;
+      color: var(--text);
+      min-height: 80px;
+      max-height: 280px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .output .line-ok   { color: var(--accent2); }
+    .output .line-err  { color: var(--danger); }
+    .output .line-info { color: var(--muted); }
+    .meta { font-size: .78rem; color: var(--muted); margin-top: .5rem; }
+    .code-snippet {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .9rem;
+      font-family: monospace;
+      font-size: .78rem;
+      color: var(--text);
+      overflow-x: auto;
+      margin-top: .8rem;
+    }
+    details summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-size: .83rem;
+      padding: .4rem 0;
+      user-select: none;
+    }
+    details summary:hover { color: var(--accent); }
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 1.5rem;
+      font-size: .82rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    @media (max-width: 640px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1><a href="../">Go Permutation API</a> / Examples</h1>
+  <nav>
+    <a href="../">Home</a>
+    <a href="../openapi/">API Docs</a>
+    <a href="https://github.com/baditaflorin/go_permutation_api" target="_blank">GitHub ↗</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <h3>Examples</h3>
+    <a href="#usecase-basic">Basic Permutations</a>
+    <a href="#usecase-security">Security Testing</a>
+    <a href="#usecase-route">Route Optimization</a>
+    <a href="#usecase-ab">A/B Test Variants</a>
+    <a href="#usecase-dna">DNA Sequences (CSV)</a>
+    <a href="#usecase-ws">WebSocket Streaming</a>
+    <a href="#usecase-ws-cancel">WS with Cancellation</a>
+  </aside>
+
+  <div class="main">
+    <!-- Global config -->
+    <div class="config-bar">
+      <label for="global-host">API Host:</label>
+      <input id="global-host" value="http://localhost:8080" placeholder="http://localhost:8080" />
+      <span style="font-size:.8rem;color:var(--muted)">All examples use this host</span>
+    </div>
+
+    <!-- ── 1. Basic ─────────────────────────────────────────── -->
+    <div class="example" id="usecase-basic">
+      <div class="example-header">
+        <h3>1 · Basic Permutations (GET)</h3>
+        <div class="tags"><span class="tag get">GET</span></div>
+      </div>
+      <div class="example-body">
+        <p>Generate all permutations of a small set. Results are returned as a flat JSON array of arrays.</p>
+        <div class="fields">
+          <input id="basic-elements" value="a,b,c" placeholder="elements (comma-separated)" />
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-run" onclick="runBasic()">Run</button>
+          <button class="btn btn-clear" onclick="clearOut('basic-out','basic-meta')">Clear</button>
+        </div>
+        <div class="output" id="basic-out">Results will appear here…</div>
+        <div class="meta" id="basic-meta"></div>
+        <details>
+          <summary>Show code</summary>
+          <div class="code-snippet" id="basic-code">curl "http://localhost:8080/?elements=a,b,c"</div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ── 2. Security testing ──────────────────────────────── -->
+    <div class="example" id="usecase-security">
+      <div class="example-header">
+        <h3>2 · Password Combination Testing</h3>
+        <div class="tags"><span class="tag post">POST</span></div>
+      </div>
+      <div class="example-body">
+        <p>Supply character groups as JSON array segments. The API generates every ordering — useful for testing password policy validators.</p>
+        <div class="fields">
+          <input id="sec-elements" value="A1!,b,C2@" placeholder="segments (comma-separated)" />
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-run" onclick="runSecurity()">Run</button>
+          <button class="btn btn-clear" onclick="clearOut('sec-out','sec-meta')">Clear</button>
+        </div>
+        <div class="output" id="sec-out">Results will appear here…</div>
+        <div class="meta" id="sec-meta"></div>
+        <details>
+          <summary>Show code</summary>
+          <div class="code-snippet">curl -X POST http://localhost:8080/ \
+  -H "Content-Type: application/json" \
+  -d '["A1!","b","C2@"]'</div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ── 3. Route optimization ────────────────────────────── -->
+    <div class="example" id="usecase-route">
+      <div class="example-header">
+        <h3>3 · Route Optimization (TSP Brute-force)</h3>
+        <div class="tags"><span class="tag get">GET</span></div>
+      </div>
+      <div class="example-body">
+        <p>Enumerate every possible visit order for a set of cities. Feed each permutation into your distance function to find the shortest tour.</p>
+        <div class="fields">
+          <input id="route-elements" value="NYC,LA,CHI,MIA" placeholder="cities (comma-separated)" />
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-run" onclick="runRoute()">Run</button>
+          <button class="btn btn-clear" onclick="clearOut('route-out','route-meta')">Clear</button>
+        </div>
+        <div class="output" id="route-out">Results will appear here…</div>
+        <div class="meta" id="route-meta"></div>
+        <details>
+          <summary>Show code</summary>
+          <div class="code-snippet">curl "http://localhost:8080/?elements=NYC,LA,CHI,MIA"
+
+# then in your app:
+perms.forEach(route => {
+  const dist = totalDistance(route);
+  if (dist < best) best = dist;
+});</div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ── 4. A/B test variants ─────────────────────────────── -->
+    <div class="example" id="usecase-ab">
+      <div class="example-header">
+        <h3>4 · A/B Test Variant Generation</h3>
+        <div class="tags"><span class="tag post">POST</span></div>
+      </div>
+      <div class="example-body">
+        <p>Generate every ordering of UI elements to find the optimal arrangement for conversion testing.</p>
+        <div class="fields">
+          <input id="ab-elements" value="Hero,CTA,Testimonial,Pricing" placeholder="page sections (comma-separated)" />
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-run" onclick="runAB()">Run</button>
+          <button class="btn btn-clear" onclick="clearOut('ab-out','ab-meta')">Clear</button>
+        </div>
+        <div class="output" id="ab-out">Results will appear here…</div>
+        <div class="meta" id="ab-meta"></div>
+        <details>
+          <summary>Show code</summary>
+          <div class="code-snippet">const sections = ["Hero","CTA","Testimonial","Pricing"];
+const res = await fetch('http://localhost:8080/', {
+  method: 'POST',
+  headers: {'Content-Type':'application/json'},
+  body: JSON.stringify(sections)
+});
+const variants = await res.json();
+console.log(`${variants.length} variants to test`);</div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ── 5. DNA sequences ─────────────────────────────────── -->
+    <div class="example" id="usecase-dna">
+      <div class="example-header">
+        <h3>5 · DNA Codon Sequence Analysis</h3>
+        <div class="tags"><span class="tag get">GET</span></div>
+      </div>
+      <div class="example-body">
+        <p>Enumerate all orderings of nucleotide bases or codons — useful for generating test cases for bioinformatics pipelines.</p>
+        <div class="fields">
+          <input id="dna-elements" value="ATG,GCT,TAA" placeholder="codons (comma-separated)" />
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-run" onclick="runDNA()">Run</button>
+          <button class="btn btn-clear" onclick="clearOut('dna-out','dna-meta')">Clear</button>
+        </div>
+        <div class="output" id="dna-out">Results will appear here…</div>
+        <div class="meta" id="dna-meta"></div>
+        <details>
+          <summary>Show code</summary>
+          <div class="code-snippet">curl "http://localhost:8080/?elements=ATG,GCT,TAA"</div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ── 6. WebSocket streaming ─────────────────────────────── -->
+    <div class="example" id="usecase-ws">
+      <div class="example-header">
+        <h3>6 · WebSocket Streaming (large sets)</h3>
+        <div class="tags"><span class="tag ws">WebSocket</span></div>
+      </div>
+      <div class="example-body">
+        <p>Stream permutations in real-time chunks over WebSocket — ideal for 7+ element sets where a full HTTP response would be very large.</p>
+        <div class="fields">
+          <input id="ws-elements" value="1,2,3,4,5" placeholder="elements (comma-separated)" />
+          <input id="ws-chunk" value="50" type="number" min="1" max="1000" placeholder="chunk size" style="max-width:110px" />
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-run" onclick="runWS()">Connect &amp; Stream</button>
+          <button class="btn btn-clear" onclick="clearOut('ws-out','ws-meta')">Clear</button>
+        </div>
+        <div class="output" id="ws-out">WebSocket output will appear here…</div>
+        <div class="meta" id="ws-meta"></div>
+        <details>
+          <summary>Show code</summary>
+          <div class="code-snippet">const ws = new WebSocket('ws://localhost:8080/ws');
+ws.onopen = () => ws.send(JSON.stringify({
+  action: 'start',
+  elements: ['1','2','3','4','5'],
+  chunk_size: 50
+}));
+ws.onmessage = e => {
+  const msg = JSON.parse(e.data);
+  if (msg.type === 'chunk') {
+    console.log(`chunk ${msg.sequence}: ${msg.data.length} permutations`);
+  } else if (msg.type === 'done') {
+    console.log(`Done: ${msg.total} total`);
+  }
+};</div>
+        </details>
+      </div>
+    </div>
+
+    <!-- ── 7. WebSocket with cancellation ─────────────────────── -->
+    <div class="example" id="usecase-ws-cancel">
+      <div class="example-header">
+        <h3>7 · WebSocket with Real-time Cancellation</h3>
+        <div class="tags"><span class="tag ws">WebSocket</span></div>
+      </div>
+      <div class="example-body">
+        <p>Start a long-running stream and cancel it mid-flight — demonstrates the <code>stop</code> action. Useful for meal planners, schedulers, or any UI with "Cancel" support.</p>
+        <div class="fields">
+          <input id="wsc-elements" value="1,2,3,4,5,6" placeholder="elements (comma-separated)" />
+          <input id="wsc-delay" value="2000" type="number" min="100" max="10000" placeholder="cancel after ms" style="max-width:140px" />
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-run" onclick="runWSCancel()">Start</button>
+          <button class="btn btn-stop" id="wsc-stop-btn" onclick="cancelWS()" disabled>Stop</button>
+          <button class="btn btn-clear" onclick="clearOut('wsc-out','wsc-meta')">Clear</button>
+        </div>
+        <div class="output" id="wsc-out">WebSocket output will appear here…</div>
+        <div class="meta" id="wsc-meta"></div>
+        <details>
+          <summary>Show code</summary>
+          <div class="code-snippet">const ws = new WebSocket('ws://localhost:8080/ws');
+ws.onopen = () => ws.send(JSON.stringify({
+  action: 'start', elements: ['1','2','3','4','5','6']
+}));
+
+// Cancel after 2 seconds
+setTimeout(() => {
+  ws.send(JSON.stringify({ action: 'stop' }));
+}, 2000);</div>
+        </details>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <a href="../">Home</a> · <a href="../openapi/">API Docs</a> ·
+  <a href="https://github.com/baditaflorin/go_permutation_api" target="_blank">GitHub</a>
+</footer>
+
+<script>
+  let cancelWS_socket = null;
+
+  function host() {
+    return document.getElementById('global-host').value.trim().replace(/\/$/, '');
+  }
+
+  function wsHost() {
+    return host().replace(/^http/, 'ws');
+  }
+
+  function clearOut(outId, metaId) {
+    document.getElementById(outId).textContent = '';
+    document.getElementById(metaId).textContent = '';
+  }
+
+  function appendLine(outId, text, cls) {
+    const el = document.getElementById(outId);
+    const span = document.createElement('span');
+    if (cls) span.className = cls;
+    span.textContent = text + '\n';
+    el.appendChild(span);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function setOut(outId, text) {
+    document.getElementById(outId).textContent = text;
+  }
+
+  async function doGET(path, outId, metaId, label) {
+    const el = document.getElementById(outId);
+    el.textContent = 'Fetching…';
+    document.getElementById(metaId).textContent = '';
+    const t0 = performance.now();
+    try {
+      const res = await fetch(host() + path);
+      const elapsed = (performance.now() - t0).toFixed(0);
+      if (!res.ok) {
+        el.textContent = `Error ${res.status}:\n${await res.text()}`;
+        return;
+      }
+      const data = await res.json();
+      el.textContent = JSON.stringify(data, null, 2);
+      document.getElementById(metaId).textContent =
+        `${data.length} ${label || 'permutations'} · ${elapsed} ms`;
+    } catch (e) {
+      el.textContent = `Network error: ${e.message}\n\nMake sure the API server is running at: ${host()}`;
+    }
+  }
+
+  async function doPOST(elements, outId, metaId) {
+    const el = document.getElementById(outId);
+    el.textContent = 'Fetching…';
+    document.getElementById(metaId).textContent = '';
+    const t0 = performance.now();
+    try {
+      const res = await fetch(host() + '/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(elements)
+      });
+      const elapsed = (performance.now() - t0).toFixed(0);
+      if (!res.ok) {
+        el.textContent = `Error ${res.status}:\n${await res.text()}`;
+        return;
+      }
+      const data = await res.json();
+      el.textContent = JSON.stringify(data, null, 2);
+      document.getElementById(metaId).textContent =
+        `${data.length} permutations · ${elapsed} ms`;
+    } catch (e) {
+      el.textContent = `Network error: ${e.message}\n\nMake sure the API server is running at: ${host()}`;
+    }
+  }
+
+  // Update curl snippet dynamically
+  document.getElementById('basic-elements').addEventListener('input', function() {
+    document.getElementById('basic-code').textContent =
+      `curl "${host()}/?elements=${this.value}"`;
+  });
+
+  function runBasic() {
+    const el = document.getElementById('basic-elements').value.trim();
+    doGET(`/?elements=${encodeURIComponent(el)}`, 'basic-out', 'basic-meta', 'permutations');
+  }
+
+  function runSecurity() {
+    const arr = document.getElementById('sec-elements').value.split(',').map(s => s.trim());
+    doPOST(arr, 'sec-out', 'sec-meta');
+  }
+
+  function runRoute() {
+    const el = document.getElementById('route-elements').value.trim();
+    doGET(`/?elements=${encodeURIComponent(el)}`, 'route-out', 'route-meta', 'routes');
+  }
+
+  function runAB() {
+    const arr = document.getElementById('ab-elements').value.split(',').map(s => s.trim());
+    doPOST(arr, 'ab-out', 'ab-meta');
+  }
+
+  function runDNA() {
+    const el = document.getElementById('dna-elements').value.trim();
+    doGET(`/?elements=${encodeURIComponent(el)}`, 'dna-out', 'dna-meta', 'sequences');
+  }
+
+  function runWS() {
+    const elements = document.getElementById('ws-elements').value.split(',').map(s => s.trim());
+    const chunkSize = parseInt(document.getElementById('ws-chunk').value) || 100;
+    clearOut('ws-out', 'ws-meta');
+    const wUrl = wsHost() + '/ws';
+    appendLine('ws-out', `Connecting to ${wUrl}…`, 'line-info');
+    let total = 0, chunks = 0, t0 = performance.now();
+    let ws;
+    try {
+      ws = new WebSocket(wUrl);
+    } catch (e) {
+      setOut('ws-out', `Failed to connect: ${e.message}`);
+      return;
+    }
+    ws.onopen = () => {
+      appendLine('ws-out', 'Connected. Starting stream…', 'line-info');
+      ws.send(JSON.stringify({ action: 'start', elements, chunk_size: chunkSize }));
+    };
+    ws.onmessage = e => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'chunk') {
+        chunks++;
+        total += (msg.data || []).length;
+        appendLine('ws-out',
+          `chunk #${msg.sequence} · ${(msg.data||[]).length} perms · running total: ${total}`,
+          'line-ok');
+      } else if (msg.type === 'progress') {
+        appendLine('ws-out', `progress: ${msg.count} done`, 'line-info');
+      } else if (msg.type === 'done') {
+        const elapsed = (performance.now() - t0).toFixed(0);
+        appendLine('ws-out', `✓ Done · ${msg.total} total · ${elapsed} ms`, 'line-ok');
+        document.getElementById('ws-meta').textContent =
+          `${msg.total} permutations in ${chunks} chunks · ${elapsed} ms`;
+        ws.close();
+      } else if (msg.type === 'error') {
+        appendLine('ws-out', `Error: ${msg.error}`, 'line-err');
+        ws.close();
+      }
+    };
+    ws.onerror = () => appendLine('ws-out', 'WebSocket error — is the server running?', 'line-err');
+    ws.onclose = () => appendLine('ws-out', 'Connection closed.', 'line-info');
+  }
+
+  function runWSCancel() {
+    if (cancelWS_socket && cancelWS_socket.readyState < 2) {
+      cancelWS_socket.close();
+    }
+    const elements = document.getElementById('wsc-elements').value.split(',').map(s => s.trim());
+    const delay = parseInt(document.getElementById('wsc-delay').value) || 2000;
+    clearOut('wsc-out', 'wsc-meta');
+    const wUrl = wsHost() + '/ws';
+    appendLine('wsc-out', `Connecting to ${wUrl}…`, 'line-info');
+    let total = 0, t0 = performance.now();
+    let ws;
+    try {
+      ws = new WebSocket(wUrl);
+    } catch (e) {
+      setOut('wsc-out', `Failed to connect: ${e.message}`);
+      return;
+    }
+    cancelWS_socket = ws;
+    document.getElementById('wsc-stop-btn').disabled = false;
+
+    let cancelled = false;
+    const cancelTimer = setTimeout(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: 'stop' }));
+        appendLine('wsc-out', `Auto-stopping after ${delay} ms…`, 'line-info');
+        cancelled = true;
+      }
+    }, delay);
+
+    ws.onopen = () => {
+      appendLine('wsc-out', 'Connected. Starting stream…', 'line-info');
+      ws.send(JSON.stringify({ action: 'start', elements, chunk_size: 20 }));
+    };
+    ws.onmessage = e => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'chunk') {
+        total += (msg.data || []).length;
+        appendLine('wsc-out',
+          `chunk #${msg.sequence} · running total: ${total}`, 'line-ok');
+      } else if (msg.type === 'done') {
+        clearTimeout(cancelTimer);
+        const elapsed = (performance.now() - t0).toFixed(0);
+        appendLine('wsc-out', `✓ Done · ${msg.total} total · ${elapsed} ms`, 'line-ok');
+        ws.close();
+      } else if (msg.type === 'error') {
+        clearTimeout(cancelTimer);
+        appendLine('wsc-out', `Error: ${msg.error}`, 'line-err');
+        ws.close();
+      }
+    };
+    ws.onerror = () => {
+      clearTimeout(cancelTimer);
+      appendLine('wsc-out', 'WebSocket error — is the server running?', 'line-err');
+    };
+    ws.onclose = () => {
+      document.getElementById('wsc-stop-btn').disabled = true;
+      const elapsed = (performance.now() - t0).toFixed(0);
+      const note = cancelled ? ' (cancelled)' : '';
+      appendLine('wsc-out', `Connection closed${note}.`, 'line-info');
+      document.getElementById('wsc-meta').textContent =
+        `${total} permutations received · ${elapsed} ms`;
+    };
+  }
+
+  function cancelWS() {
+    if (cancelWS_socket && cancelWS_socket.readyState === WebSocket.OPEN) {
+      cancelWS_socket.send(JSON.stringify({ action: 'stop' }));
+    }
+  }
+
+  // Sidebar active link on scroll
+  const anchors = document.querySelectorAll('.example');
+  const links = document.querySelectorAll('.sidebar a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    anchors.forEach(a => {
+      if (window.scrollY >= a.offsetTop - 80) current = a.id;
+    });
+    links.forEach(l => {
+      l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+    });
+  }, { passive: true });
+</script>
+</body>
+</html>

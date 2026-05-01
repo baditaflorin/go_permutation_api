@@ -37,11 +37,13 @@ type DatabaseConfig struct {
 
 // AppConfig holds application-specific configuration
 type AppConfig struct {
-	MaxElements        int  `json:"max_elements"`
-	Quiet              bool `json:"quiet"`
-	MemoryStatsFreq    int  `json:"memory_stats_freq"`    // Update memory stats every N permutations
-	EnableCORS         bool `json:"enable_cors"`
-	EnableMetrics      bool `json:"enable_metrics"`
+	MaxElements     int  `json:"max_elements"`
+	Quiet           bool `json:"quiet"`
+	MemoryStatsFreq int  `json:"memory_stats_freq"`
+	EnableCORS      bool `json:"enable_cors"`
+	EnableMetrics   bool `json:"enable_metrics"`
+	EnablePprof     bool `json:"enable_pprof"`     // NEVER enable in production
+	EnablePrometheus bool `json:"enable_prometheus"` // /metrics in Prometheus format
 }
 
 // Default returns a Config with default values
@@ -60,11 +62,13 @@ func Default() *Config {
 			SSLMode: "disable",
 		},
 		App: AppConfig{
-			MaxElements:     12,
-			Quiet:           false,
-			MemoryStatsFreq: 1000,
-			EnableCORS:      true,
-			EnableMetrics:   false,
+			MaxElements:      12,
+			Quiet:            false,
+			MemoryStatsFreq:  1000,
+			EnableCORS:       false, // off by default for security
+			EnableMetrics:    false,
+			EnablePprof:      false,
+			EnablePrometheus: false,
 		},
 	}
 }

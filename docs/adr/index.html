@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Architecture Decision Records · Go Permutation API</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --text: #c9d1d9;
+      --muted: #8b949e;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: .8rem;
+    }
+    header h1 { font-size: 1.2rem; color: #fff; }
+    header h1 a { color: var(--accent); text-decoration: none; }
+    nav a {
+      color: var(--text);
+      text-decoration: none;
+      margin-left: 1.2rem;
+      font-size: .9rem;
+    }
+    nav a:hover { color: var(--accent); }
+    .container { max-width: 900px; margin: 0 auto; padding: 2.5rem 2rem; }
+    .intro {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.5rem;
+      margin-bottom: 2.5rem;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+    .intro strong { color: var(--text); }
+    h2 { font-size: 1.5rem; color: #fff; margin-bottom: 1.5rem; }
+    .adr-grid {
+      display: grid;
+      gap: 1rem;
+    }
+    .adr-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.4rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1.2rem;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color .2s, transform .15s;
+    }
+    .adr-card:hover { border-color: var(--accent); transform: translateX(3px); }
+    .adr-num {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--muted);
+      min-width: 50px;
+      flex-shrink: 0;
+      font-family: monospace;
+    }
+    .adr-info h3 { font-size: 1rem; color: #fff; margin-bottom: .3rem; }
+    .adr-info p { font-size: .88rem; color: var(--muted); margin-bottom: .5rem; }
+    .adr-tags { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .hat {
+      font-size: .75rem;
+      padding: .15rem .6rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .hat-white  { border-color: #888; color: #ccc; }
+    .hat-red    { border-color: #f85149; color: #f85149; }
+    .hat-black  { border-color: #8b949e; color: #8b949e; }
+    .hat-yellow { border-color: #d29922; color: #d29922; }
+    .hat-green  { border-color: #3fb950; color: #3fb950; }
+    .hat-blue   { border-color: #58a6ff; color: #58a6ff; }
+    .status {
+      font-size: .73rem;
+      padding: .15rem .55rem;
+      border-radius: 12px;
+      background: rgba(63,185,80,.15);
+      color: #3fb950;
+      border: 1px solid #3fb950;
+    }
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 1.5rem;
+      font-size: .82rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1><a href="../">Go Permutation API</a> / ADRs</h1>
+  <nav>
+    <a href="../">Home</a>
+    <a href="../examples/">Examples</a>
+    <a href="../openapi/">API Docs</a>
+    <a href="https://github.com/baditaflorin/go_permutation_api" target="_blank">GitHub ↗</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="intro">
+    <strong>Architecture Decision Records (ADRs)</strong> document significant decisions made during the design of this project.
+    Each ADR follows the <strong>Six Thinking Hats</strong> methodology: White (facts), Red (UX/emotion),
+    Black (risk), Yellow (value), Green (innovation), and Blue (process/coordination).
+    Click any record to read the full rationale on GitHub.
+  </div>
+
+  <h2>Decision Records</h2>
+
+  <div class="adr-grid">
+
+    <a class="adr-card" href="https://github.com/baditaflorin/go_permutation_api/blob/main/docs/adr/0001-standardize-api-response-format.md" target="_blank">
+      <div class="adr-num">0001</div>
+      <div class="adr-info">
+        <h3>Standardize API Response Format</h3>
+        <p>Adopt a consistent JSON envelope (<code>version</code>, <code>request_id</code>, <code>data</code>, <code>meta</code>, <code>error</code>) for all API responses to simplify client integration and distributed tracing.</p>
+        <div class="adr-tags">
+          <span class="hat hat-white">⬜ White Hat · Facts</span>
+          <span class="status">Accepted</span>
+        </div>
+      </div>
+    </a>
+
+    <a class="adr-card" href="https://github.com/baditaflorin/go_permutation_api/blob/main/docs/adr/0002-user-experience-error-messages.md" target="_blank">
+      <div class="adr-num">0002</div>
+      <div class="adr-info">
+        <h3>User Experience Error Messages</h3>
+        <p>Provide actionable, human-readable error messages with typed codes, natural-language suggestions, and links to documentation — rather than bare HTTP status codes.</p>
+        <div class="adr-tags">
+          <span class="hat hat-red">🔴 Red Hat · UX &amp; Emotion</span>
+          <span class="status">Accepted</span>
+        </div>
+      </div>
+    </a>
+
+    <a class="adr-card" href="https://github.com/baditaflorin/go_permutation_api/blob/main/docs/adr/0003-security-hardening.md" target="_blank">
+      <div class="adr-num">0003</div>
+      <div class="adr-info">
+        <h3>Security Hardening for Public Release</h3>
+        <p>Catalogue and address 16 attack surfaces: SQL injection, open CORS, missing security headers, unbounded body size, pprof exposure, plaintext DB passwords in logs, and more.</p>
+        <div class="adr-tags">
+          <span class="hat hat-black">⚫ Black Hat · Risk &amp; Caution</span>
+          <span class="status">Accepted</span>
+        </div>
+      </div>
+    </a>
+
+    <a class="adr-card" href="https://github.com/baditaflorin/go_permutation_api/blob/main/docs/adr/0004-performance-optimization.md" target="_blank">
+      <div class="adr-num">0004</div>
+      <div class="adr-info">
+        <h3>Performance Optimization</h3>
+        <p>Apply <code>sync.Pool</code> slice reuse, 4 KB buffered NDJSON streaming, and in-place next-permutation algorithm — projecting 30-45 % throughput improvement for large inputs.</p>
+        <div class="adr-tags">
+          <span class="hat hat-yellow">🟡 Yellow Hat · Value &amp; Benefit</span>
+          <span class="status">Accepted</span>
+        </div>
+      </div>
+    </a>
+
+    <a class="adr-card" href="https://github.com/baditaflorin/go_permutation_api/blob/main/docs/adr/0005-websocket-streaming.md" target="_blank">
+      <div class="adr-num">0005</div>
+      <div class="adr-info">
+        <h3>WebSocket Streaming Protocol</h3>
+        <p>Add a bidirectional WebSocket endpoint with start/stop control, configurable chunk sizes, sequence numbers, and real-time cancellation — enabling streaming of millions of permutations without memory blow-up.</p>
+        <div class="adr-tags">
+          <span class="hat hat-green">🟢 Green Hat · Innovation</span>
+          <span class="status">Accepted</span>
+        </div>
+      </div>
+    </a>
+
+    <a class="adr-card" href="https://github.com/baditaflorin/go_permutation_api/blob/main/docs/adr/0006-observability-opentelemetry.md" target="_blank">
+      <div class="adr-num">0006</div>
+      <div class="adr-info">
+        <h3>Structured Observability with OpenTelemetry</h3>
+        <p>Adopt <code>log/slog</code> as the structured logging foundation, X-Request-ID middleware for distributed tracing, and a Prometheus-compatible <code>/metrics</code> endpoint — while deferring full OTel SDK integration.</p>
+        <div class="adr-tags">
+          <span class="hat hat-blue">🔵 Blue Hat · Process &amp; Control</span>
+          <span class="status">Accepted</span>
+        </div>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<footer>
+  <a href="../">Home</a> · <a href="../examples/">Examples</a> · <a href="../openapi/">API Docs</a> ·
+  <a href="https://github.com/baditaflorin/go_permutation_api" target="_blank">GitHub</a>
+</footer>
+
+</body>
+</html>

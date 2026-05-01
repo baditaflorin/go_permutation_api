@@ -41,6 +41,7 @@ A production-ready, highly configurable Go application for generating lexicograp
   - [Data Sources](#data-sources)
 - [Configuration](#configuration)
 - [Docker](#docker)
+- [Interactive Documentation & Examples](#interactive-documentation--examples)
 - [API Documentation](#api-documentation)
 - [Development](#development)
 - [Project Structure](#project-structure)
@@ -313,6 +314,54 @@ Services:
 ```bash
 make docker-down
 ```
+
+## Interactive Documentation & Examples
+
+A complete interactive documentation site is available in the `docs/` directory with:
+
+- **Landing Page** (`docs/index.html`): Quick-start guide with live demo widget
+- **Interactive Examples** (`docs/examples/index.html`): 7 runnable examples you can execute directly in your browser
+  - Basic GET/POST permutations
+  - Password combination testing
+  - Route optimization (TSP)
+  - A/B test variant generation
+  - DNA sequence analysis
+  - WebSocket streaming with progress
+  - WebSocket with real-time cancellation
+- **OpenAPI Spec** (`docs/openapi/index.html`): Full Swagger UI viewer
+- **Architecture Decisions** (`docs/adr/index.html`): Six Thinking Hats ADR index
+
+### View Documentation Locally
+
+Serve the docs with any static file server:
+
+```bash
+# Python
+cd docs && python3 -m http.server 8000
+
+# Node.js
+npx http-server docs -p 8000
+
+# Go
+cd docs && go run -mod=mod github.com/shurcooL/goexec@latest 'http.ListenAndServe(":8000", http.FileServer(http.Dir(".")))'
+```
+
+Then open `http://localhost:8000` in your browser.
+
+**Note:** The interactive examples require a running API server. Start one with:
+```bash
+docker run -p 8080:8080 -e SERVER_HOST=0.0.0.0 ghcr.io/baditaflorin/go_permutation_api --serve
+```
+
+### GitHub Pages
+
+To enable the hosted version at `https://baditaflorin.github.io/go_permutation_api/`:
+
+1. Go to **Settings → Pages** in your GitHub repository
+2. Under **Source**, select **GitHub Actions**
+3. Merge this branch to `main`
+
+The `.github/workflows/pages.yml` workflow will deploy automatically.
 
 ## API Documentation
 
