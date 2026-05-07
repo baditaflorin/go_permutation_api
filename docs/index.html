@@ -328,16 +328,15 @@ docker-compose up</pre>
     </div>
   </div>
 
-  <!-- Live Mini Demo (requires a running server) -->
+  <!-- Live Demo (WASM, no server required) -->
   <section id="demo">
     <h2>Live Demo</h2>
     <div class="live-demo">
       <p style="color:var(--muted);font-size:.88rem;margin-bottom:1rem">
-        Enter a comma-separated list of elements and click <strong>Run</strong> to call a live API instance.<br>
-        To try locally: <code style="background:var(--bg);padding:.1rem .4rem;border-radius:4px">docker run -p 8080:8080 -e SERVER_HOST=0.0.0.0 ghcr.io/baditaflorin/go_permutation_api --serve</code>
+        Runs entirely in your browser via <strong>WebAssembly</strong> — no server required.<br>
+        <span id="demo-wasm-status" style="color:var(--warn)">Loading WASM…</span>
       </p>
       <div class="demo-row">
-        <input id="demo-host" value="http://localhost:8080" placeholder="API host" />
         <input id="demo-elements" value="a,b,c" placeholder="elements (comma-separated)" />
         <button onclick="runDemo()">Run</button>
       </div>
@@ -438,6 +437,8 @@ docker-compose up</pre>
   <a href="https://github.com/baditaflorin/go_permutation_api/blob/main/LICENSE" target="_blank">MIT License</a>
 </footer>
 
+<!-- WASM bootstrap -->
+<script src="wasm_exec.js"></script>
 <script>
   // Tab switcher
   document.querySelectorAll('.tab').forEach(tab => {
@@ -450,32 +451,43 @@ docker-compose up</pre>
     });
   });
 
-  // Live demo
-  async function runDemo() {
-    const host = document.getElementById('demo-host').value.trim().replace(/\/$/, '');
-    const elements = document.getElementById('demo-elements').value.trim();
-    const out = document.getElementById('demo-output');
+  // WASM loader
+  let wasmReady = false;
+  (async () => {
+    try {
+      const go = new Go();
+      const result = await WebAssembly.instantiateStreaming(fetch('permutation.wasm'), go.importObject);
+      go.run(result.instance);
+      wasmReady = true;
+      document.getElementById('demo-wasm-status').textContent = 'WebAssembly ready — runs offline in your browser.';
+      document.getElementById('demo-wasm-status').style.color = 'var(--accent2)';
+    } catch (e) {
+      document.getElementById('demo-wasm-status').textContent =
+        'WASM unavailable — open Examples page and use HTTP mode with a local server.';
+      document.getElementById('demo-wasm-status').style.color = 'var(--danger)';
+    }
+  })();
+
+  // Live demo — WASM first
+  function runDemo() {
+    const elements = document.getElementById('demo-elements').value.trim().split(',').map(s => s.trim());
+    const out  = document.getElementById('demo-output');
     const meta = document.getElementById('demo-meta');
-    out.textContent = 'Fetching…';
+    out.textContent = 'Computing…';
     meta.textContent = '';
     const t0 = performance.now();
     try {
-      const res = await fetch(`${host}/?elements=${encodeURIComponent(elements)}`);
-      const elapsed = (performance.now() - t0).toFixed(0);
-      if (!res.ok) {
-        const err = await res.text();
-        out.textContent = `Error ${res.status}:\n${err}`;
-        return;
-      }
-      const data = await res.json();
+      if (!wasmReady) throw new Error('WASM not ready yet — please wait a moment and try again');
+      const raw  = goPermutations(elements);
+      const data = Array.from(raw).map(p => Array.from(p));
+      const elapsed = (performance.now() - t0).toFixed(1);
       out.textContent = JSON.stringify(data, null, 2);
-      meta.textContent = `${data.length} permutations · ${elapsed} ms`;
+      meta.textContent = `${data.length} permutations · ${elapsed} ms · WASM`;
     } catch (e) {
-      out.textContent = `Network error: ${e.message}\n\nMake sure a local API server is running at the host above, or update the host field.`;
+      out.textContent = `Error: ${e.message}`;
     }
   }
 
-  // Allow Enter key in elements input
   document.getElementById('demo-elements').addEventListener('keydown', e => {
     if (e.key === 'Enter') runDemo();
   });

@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - "cmd/wasm/**"
+      - "internal/permutation/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -13,20 +15,27 @@ permissions:
   pages: write
   id-token: write
 
-# Only one deployment at a time; cancel in-flight runs.
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build WASM module
+        run: |
+          GOARCH=wasm GOOS=js go build -o docs/permutation.wasm ./cmd/wasm/
+          cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" docs/wasm_exec.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -36,6 +45,13 @@ jobs:
         with:
           path: docs/
 
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

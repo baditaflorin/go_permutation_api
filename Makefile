@@ -1,4 +1,4 @@
-.PHONY: help build test run run-api run-gui clean docker-build docker-up docker-down deps lint fmt vet coverage install
+.PHONY: help build wasm docs-serve test run run-api run-gui clean docker-build docker-up docker-down deps lint fmt vet coverage install
 
 # Variables
 BINARY_NAME=permutation-api
@@ -24,6 +24,19 @@ build:
 	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=1 $(GO) build $(GOFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PATH)
 	@echo "Build complete: $(BUILD_DIR)/$(BINARY_NAME)"
+
+## wasm: Build the WebAssembly module for the GitHub Pages site
+wasm:
+	@echo "Building WASM module..."
+	GOARCH=wasm GOOS=js $(GO) build -o docs/permutation.wasm ./cmd/wasm/
+	cp "$$(go env GOROOT)/lib/wasm/wasm_exec.js" docs/wasm_exec.js 2>/dev/null || \
+	  find $$(go env GOPATH)/pkg/mod/golang.org -name "wasm_exec.js" 2>/dev/null | sort -r | head -1 | xargs -I{} cp {} docs/wasm_exec.js
+	@echo "WASM build complete: docs/permutation.wasm ($(shell ls -lh docs/permutation.wasm | awk '{print $$5}'))"
+
+## docs-serve: Serve the documentation site locally on port 8000
+docs-serve:
+	@echo "Serving docs at http://localhost:8000"
+	cd docs && python3 -m http.server 8000
 
 ## install: Install the application to $GOPATH/bin
 install:
