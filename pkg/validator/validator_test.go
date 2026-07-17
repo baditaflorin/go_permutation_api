@@ -36,6 +36,12 @@ func TestValidateElements(t *testing.T) {
 			wantErr:     true,
 		},
 		{
+			name:        "control character element",
+			elements:    []string{"api\nkey", "domain"},
+			maxElements: 5,
+			wantErr:     true,
+		},
+		{
 			name:        "empty slice",
 			elements:    []string{},
 			maxElements: 5,
@@ -107,6 +113,11 @@ func TestSanitizeElements(t *testing.T) {
 			name:     "empty slice",
 			input:    []string{},
 			expected: []string{},
+		},
+		{
+			name:     "deduplicates normalized collisions",
+			input:    []string{" api ", "api", "domain", "domain "},
+			expected: []string{"api", "domain"},
 		},
 	}
 

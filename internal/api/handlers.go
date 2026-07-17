@@ -16,6 +16,11 @@ type Handler struct {
 	config *config.Config
 }
 
+// maxStreamedPermutations bounds a single HTTP response. Even valid input
+// under MaxElements can otherwise request 12! JSON arrays and exhaust a
+// worker/network while producing evidence no consumer can use.
+const maxStreamedPermutations = 100000
+
 // NewHandler creates a new handler
 func NewHandler(cfg *config.Config) *Handler {
 	return &Handler{
@@ -58,6 +63,10 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if err := validatePermutationVolume(elements); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	h.writePermutations(w, elements)
 }
@@ -75,8 +84,18 @@ func (h *Handler) parseElementsFromQuery(r *http.Request) ([]string, error) {
 	if err := validator.ValidateElements(elements, h.config.App.MaxElements); err != nil {
 		return nil, err
 	}
+	if err := validatePermutationVolume(elements); err != nil {
+		return nil, err
+	}
 
 	return elements, nil
+}
+
+func validatePermutationVolume(elements []string) error {
+	if _, exceeds := permutation.CountWithinLimit(len(elements), maxStreamedPermutations); exceeds {
+		return fmt.Errorf("too many permutations: maximum streamed response is %d", maxStreamedPermutations)
+	}
+	return nil
 }
 
 // parseElementsFromBody extracts elements from JSON body

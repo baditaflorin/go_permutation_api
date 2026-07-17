@@ -124,3 +124,20 @@ func Count(n int) int {
 	}
 	return result
 }
+
+// CountWithinLimit returns the number of unique permutations unless doing so
+// would exceed limit. It stops before integer overflow and lets HTTP callers
+// reject requests that would stream an unusably large response.
+func CountWithinLimit(n, limit int) (count int, exceeds bool) {
+	if n < 0 || limit < 1 {
+		return 0, true
+	}
+	count = 1
+	for i := 2; i <= n; i++ {
+		if count > limit/i {
+			return limit, true
+		}
+		count *= i
+	}
+	return count, false
+}

@@ -75,6 +75,36 @@ func TestHandleGetTooManyElements(t *testing.T) {
 	}
 }
 
+func TestHandleGetDeduplicatesNormalizedElements(t *testing.T) {
+	handler := NewHandler(config.Default())
+	req := httptest.NewRequest("GET", "/permutations?elements=api,%20api%20,domain", nil)
+	w := httptest.NewRecorder()
+	handler.HandlePermutations(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", w.Code)
+	}
+	var result [][]string
+	if err := json.NewDecoder(w.Body).Decode(&result); err != nil {
+		t.Fatal(err)
+	}
+	if len(result) != 2 {
+		t.Fatalf("expected two unique permutations, got %d", len(result))
+	}
+}
+
+func TestHandleGetRejectsOversizedPermutationResponse(t *testing.T) {
+	handler := NewHandler(config.Default())
+	// 9! is larger than the bounded response limit while still within the
+	// configured element count.
+	req := httptest.NewRequest("GET", "/permutations?elements=a,b,c,d,e,f,g,h,i", nil)
+	w := httptest.NewRecorder()
+	handler.HandlePermutations(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", w.Code)
+	}
+}
+
 func TestHandleHealth(t *testing.T) {
 	cfg := config.Default()
 	handler := NewHandler(cfg)
