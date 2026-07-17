@@ -165,6 +165,15 @@ func TestCount(t *testing.T) {
 	}
 }
 
+func TestCountWithinLimit(t *testing.T) {
+	if got, exceeds := CountWithinLimit(5, 200); exceeds || got != 120 {
+		t.Fatalf("5! within limit: got=%d exceeds=%t", got, exceeds)
+	}
+	if _, exceeds := CountWithinLimit(12, 100000); !exceeds {
+		t.Fatal("12! must exceed the streamed response limit")
+	}
+}
+
 func TestGeneratorDoesNotModifyInput(t *testing.T) {
 	input := []string{"c", "b", "a"}
 	original := make([]string, len(input))
